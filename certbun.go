@@ -41,10 +41,14 @@ func main() {
 	}
 }
 
-func run(_ io.Writer, _ []string) error {
-	err := godotenv.Load("config.env")
+func run(_ io.Writer, args []string) error {
+	if len(args) < 2 {
+		return fmt.Errorf("usage: certbot [path/to/config.env]")
+	}
+
+	err := godotenv.Load(args[1])
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read config file: %s", err)
 	}
 
 	conf := parseConfig()
