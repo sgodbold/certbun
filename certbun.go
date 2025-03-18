@@ -63,19 +63,35 @@ func run(_ io.Writer, args []string) error {
 	pubPath := filepath.Join(conf.installDir, "public.key.pem")
 	certPath := filepath.Join(conf.installDir, "cert.pem")
 
-	err = os.WriteFile(privPath, []byte(ssl.PrivateKey), 0600)
+	err = lazyWrite(privPath, ssl.PrivateKey)
 	if err != nil {
-		return fmt.Errorf("failed to write private key: %s", err)
+		return err
+	}
+	err = lazyWrite(pubPath, ssl.PublicKey)
+	if err != nil {
+		return err
+	}
+	err = lazyWrite(certPath, ssl.CertChain)
+	if err != nil {
+		return err
 	}
 
-	err = os.WriteFile(pubPath, []byte(ssl.PublicKey), 0600)
-	if err != nil {
-		return fmt.Errorf("failed to write public key: %s", err)
+	return nil
+}
+
+func lazyWrite(path string, data string) error {
+	fsData, err := os.ReadFile(path)
+	if os.IsExist(err) && err != nil {
+		return err
 	}
 
-	err = os.WriteFile(certPath, []byte(ssl.CertChain), 0600)
+	if string(fsData) == data {
+		return nil
+	}
+
+	err = os.WriteFile(path, []byte(data), 0600)
 	if err != nil {
-		return fmt.Errorf("failed to write certificate: %s", err)
+		return fmt.Errorf("failed file: %s : %s", path, err)
 	}
 
 	return nil
